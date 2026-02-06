@@ -16,11 +16,14 @@ test.describe('Revolt Motors Scuba Testing', () => {
         }
 
         // 1. White Screen / Render Check
-        await expect(page.locator('.navbar.navbar-expand-lg')).toBeVisible({ timeout: 15000 });
-        await expect(page.locator('footer.main-footer')).toBeVisible({ timeout: 15000 });
+        const header = page.locator('header, nav, .navbar').first();
+        const footer = page.locator('footer, .footer, .active-footer').first();
+
+        await expect(header).toBeVisible({ timeout: 15000 });
+        await expect(footer).toBeVisible({ timeout: 15000 });
 
         // Check for hero image or brand logo to ensure visual loading
-        const visualIndicator = page.locator('.navbar-brand img').first();
+        const visualIndicator = page.locator('header img, nav img, .navbar-brand img').first();
         await expect(visualIndicator).toBeVisible();
 
         // 2. SEO Checks
@@ -37,7 +40,6 @@ test.describe('Revolt Motors Scuba Testing', () => {
             console.log(`Main H1: ${h1Text}`);
         } catch (e) {
             console.warn('Current Page H1 not found or not visible:', e.message);
-            // We warn for now to allow the setup to be verified. In production, strict mode should be enabled.
         }
 
         // Meta Description Check
@@ -50,18 +52,24 @@ test.describe('Revolt Motors Scuba Testing', () => {
         }
     });
 
-    test('Navigation & Route Scuba (Navbar & Footer)', async ({ page }) => {
-        test.setTimeout(120000); // Allow 2 minutes for crawling
+    test('Navigation & Route Scuba (All Public Routes)', async ({ page }) => {
+        // Increase timeout significantly for crawling many pages
+        test.setTimeout(300000);
 
-        // 1. Gather all links
+        // 1. Gather all links from Homepage
+        console.log('Gathering public routes from Homepage...');
         await page.goto('/', { waitUntil: 'domcontentloaded' });
-        try { await page.waitForLoadState('networkidle', { timeout: 5000 }); } catch (e) { }
+        try { await page.waitForLoadState('networkidle', { timeout: 15000 }); } catch (e) { }
+
+        // Ensure footer is loaded before scraping links
+        try { await page.locator('footer, .footer').first().waitFor({ state: 'visible', timeout: 10000 }); } catch (e) { }
 
         // Get all unique links from Navbar and Footer
-        const navLinks = await page.locator('.navbar.navbar-expand-lg .nav-link').all();
-        const footerLinks = await page.locator('footer.main-footer a').all();
+        const navLinks = await page.locator('header a, nav a, .navbar a').all();
+        const footerLinks = await page.locator('footer a, .footer a').all();
 
         const linksToTest = new Set();
+        // Add home explicitly
         linksToTest.add(page.url());
 
         // Helper to extract href
@@ -70,12 +78,13 @@ test.describe('Revolt Motors Scuba Testing', () => {
                 const href = await locator.getAttribute('href');
                 if (href && !href.startsWith('mailto:') && !href.startsWith('tel:') && !href.startsWith('#') && !href.startsWith('javascript:')) {
                     const absoluteUrl = new URL(href, page.url()).href;
+                    // Only test internal links
                     if (absoluteUrl.startsWith('https://www.revoltmotors.com')) {
                         linksToTest.add(absoluteUrl);
                     }
                 }
             } catch (e) {
-                // Ignore stale elements
+                // Ignore stale elements or errors
             }
         };
 
@@ -84,38 +93,115 @@ test.describe('Revolt Motors Scuba Testing', () => {
 
         console.log(`Found ${linksToTest.size} unique internal links to test.`);
 
-        // 2. Visit each link
+        // 2. Visit each link and perform Health & SEO Checks
         const arrLinks = Array.from(linksToTest);
 
+        // Summary storage
+        const executionReport = [];
+        const SPECIAL_LAYOUT_PAGES = ['/book', '/test-ride'];
+
         for (const url of arrLinks) {
-            // console.log(`Scuba diving into: ${url}`); // Reduce noise
+            await test.step(`Health Check: ${url}`, async () => {
+                console.log(`\n🔍 Checking: ${url}`);
+                const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-            try {
-                const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-                if (response.status() !== 200) {
-                    console.error(`Error: ${url} returned ${response.status()}`);
-                    expect(response.status(), `Failed to load ${url}`).toBe(200);
-                }
-
-                // White Screen Check
                 try {
-                    await expect(page.locator('body')).not.toBeEmpty();
-                } catch (e) {
-                    throw new Error(`White screen detected on ${url}`);
+                    await page.waitForLoadState('networkidle', { timeout: 10000 });
+                } catch (e) { }
+                await page.waitForTimeout(2000);
+
+                const reportEntry = { url, status: '✅', issues: [] };
+
+                // 1. Status Check
+                const status = response.status();
+                if (status === 200) {
+                    console.log(`   ✅ Status: 200 OK`);
+                } else {
+                    console.log(`   ❌ Status: ${status}`);
+                    reportEntry.status = '❌';
+                    reportEntry.issues.push(`Status ${status}`);
+                }
+                expect.soft(status, `Status 200 OK for ${url}`).toBe(200);
+
+                // 2. Content Rendering
+                const bodyCount = await page.locator('body').count();
+                if (bodyCount > 0) console.log(`   ✅ Body Content: OK`);
+                else {
+                    console.log(`   ❌ Body Content: EMPTY`);
+                    reportEntry.status = '❌';
+                    reportEntry.issues.push('Empty Body');
+                }
+                await expect.soft(page.locator('body')).not.toBeEmpty();
+
+                // Navbar & Footer (Conditional Check)
+                const isSpecialPage = SPECIAL_LAYOUT_PAGES.some(p => url.includes(p));
+                const header = page.locator('header, nav, .navbar').first();
+                const footer = page.locator('footer, .footer').first();
+
+                if (isSpecialPage) {
+                    console.log(`   ℹ️  Special Layout (Landing Page): Skipping strict Navbar/Footer check`);
+                } else {
+                    if (await header.isVisible()) console.log(`   ✅ Navbar: Visible`);
+                    else {
+                        console.log(`   ⚠️ Navbar: MISSING`);
+                        reportEntry.issues.push('Missing Navbar');
+                        // Treat as soft failure/warning in report, but strict failure in test
+                        expect.soft(header, `Navbar visible on ${url}`).toBeVisible();
+                    }
+
+                    if (await footer.isVisible()) console.log(`   ✅ Footer: Visible`);
+                    else {
+                        console.log(`   ⚠️ Footer: MISSING`);
+                        reportEntry.issues.push('Missing Footer');
+                        expect.soft(footer, `Footer visible on ${url}`).toBeVisible();
+                    }
                 }
 
-                // H1 Check (Soft)
+                // 3. SEO Checks
+                const title = await page.title();
+                if (title.length > 0) console.log(`   ✅ Title: "${title.substring(0, 50)}..."`);
+                else {
+                    console.log(`   ❌ Title: MISSING`);
+                    reportEntry.issues.push('Missing Title');
+                    expect.soft(title.length, `Page title should exist for ${url}`).toBeGreaterThan(0);
+                }
+
+                // H1
                 const h1Count = await page.locator('h1').count();
-                if (h1Count === 0) {
-                    console.warn(`Warning: No H1 found on ${url}`);
+                if (h1Count > 0) {
+                    const h1Text = await page.locator('h1').first().innerText();
+                    console.log(`   ✅ H1: "${h1Text.substring(0, 50)}..."`);
+                    expect.soft(h1Text.length, `H1 text check for ${url}`).toBeGreaterThan(0);
+                } else {
+                    console.log(`   ⚠️ H1: MISSING`);
+                    reportEntry.issues.push('Missing H1');
                 }
 
-            } catch (e) {
-                console.error(`Failed during visit to ${url}: ${e.message}`);
-                // Depending on strictness, we can throw or just log.
-                // throw e; // Relaxed for first pass demo
-            }
+                // Meta Description
+                const metaDesc = await page.locator('meta[name="description"]').getAttribute('content').catch(() => null);
+                if (metaDesc && metaDesc.length > 0) {
+                    console.log(`   ✅ Meta Description: Present`);
+                } else {
+                    console.log(`   ⚠️ Meta Description: MISSING`);
+                    reportEntry.issues.push('Missing Meta Desc');
+                }
+
+                executionReport.push(reportEntry);
+            });
         }
+
+        // Print Final Summary
+        console.log('\n\n' + '='.repeat(80));
+        console.log('🤖 SCUBA HEALTH REPORT SUMMARY');
+        console.log('='.repeat(80));
+        console.log('| Status | URL                                              | Issues                     |');
+        console.log('|--------|--------------------------------------------------|----------------------------|');
+
+        for (const row of executionReport) {
+            const urlDisplay = row.url.replace('https://www.revoltmotors.com', '');
+            const issuesDisplay = row.issues.length > 0 ? row.issues.join(', ') : 'None';
+            console.log(`|   ${row.status}   | ${urlDisplay.padEnd(48)} | ${issuesDisplay.padEnd(26)} |`);
+        }
+        console.log('='.repeat(80) + '\n');
     });
 });

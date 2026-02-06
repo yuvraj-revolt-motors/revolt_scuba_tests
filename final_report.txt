@@ -1,0 +1,67 @@
+
+Running 2 tests using 2 workers
+
+Starting Homepage Scuba...
+Gathering public routes from Homepage...
+Page Title: Revolt Motors | India's No. 1 Electric Bike
+Found 23 unique internal links to test.
+Main H1: Electric Bike: Ride the Revolution
+
+🔍 Checking: https://www.revoltmotors.com/
+Meta Description: Book India's No. 1 electric bike Now. Experience the power of AI enabled electric motorcycle.
+  ✓  1 [chromium] › tests\scuba.spec.js:5:5 › Revolt Motors Scuba Testing › Homepage Health & SEO Check (5.3s)
+   ✅ Status: 200 OK
+   ✅ Body Content: OK
+   ✅ Navbar: Visible
+   ✅ Footer: Visible
+   ✅ Title: "Revolt Motors | India's No. 1 Electric Bike..."
+   ✅ H1: "Electric Bike: Ride the Revolution..."
+   ✅ Meta Description: Present
+
+🔍 Checking: https://www.revoltmotors.com/electric-bike
+   ✅ Status: 200 OK
+   ✅ Body Content: OK
+   ✅ Navbar: Visible
+   ✅ Footer: Visible
+   ✅ Title: "Electric Bike - Best Electric Bikes in India, Mode..."
+   ✅ H1: "ELECTRIC BIKES IN
+INDIA – REDEFINING THE
+WAY YOU R..."
+   ✅ Meta Description: Present
+
+🔍 Checking: https://www.revoltmotors.com/test-ride
+   ✅ Status: 200 OK
+   ✅ Body Content: OK
+   ℹ️  Special Layout (Landing Page): Skipping strict Navbar/Footer check
+   ✅ Title: "Book Your Test Ride Now - Revolt Motors..."
+   ⚠️ H1: MISSING
+   ✅ Meta Description: Present
+
+🔍 Checking: https://www.revoltmotors.com/book
+Terminate batch job (Y/N)?    ✅ Status: 200 OK
+  ✘  2 [chromium] › tests\scuba.spec.js:55:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) (21.0s)
+
+
+  1) [chromium] › tests\scuba.spec.js:55:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) › Health Check: https://www.revoltmotors.com/book 
+
+    Test was interrupted.
+
+    Error: locator.count: Test ended.
+
+      125 |
+      126 |                 // 2. Content Rendering
+    > 127 |                 const bodyCount = await page.locator('body').count();
+          |                                                              ^
+      128 |                 if (bodyCount > 0) console.log(`   ✅ Body Content: OK`);
+      129 |                 else {
+      130 |                     console.log(`   ❌ Body Content: EMPTY`);
+        at C:\Users\700612\revolt_scuba_tests\tests\scuba.spec.js:127:62
+        at C:\Users\700612\revolt_scuba_tests\tests\scuba.spec.js:104:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\scuba-Revolt-Motors-Scuba--a804f-te-Scuba-All-Public-Routes--chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 interrupted
+    [chromium] › tests\scuba.spec.js:55:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) 
+  1 passed (27.2s)

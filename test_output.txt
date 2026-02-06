@@ -1,0 +1,75 @@
+
+Running 2 tests using 2 workers
+
+Gathering public routes from Homepage...
+Starting Homepage Scuba...
+Found 1 unique internal links to test.
+Visiting: https://www.revoltmotors.com/
+  ✘  2 [chromium] › tests\scuba.spec.js:52:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) (10.1s)
+  ✘  1 [chromium] › tests\scuba.spec.js:5:5 › Revolt Motors Scuba Testing › Homepage Health & SEO Check (19.6s)
+
+
+  1) [chromium] › tests\scuba.spec.js:5:5 › Revolt Motors Scuba Testing › Homepage Health & SEO Check 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.navbar.navbar-expand-lg')
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for locator('.navbar.navbar-expand-lg')[22m
+
+
+      17 |
+      18 |         // 1. White Screen / Render Check
+    > 19 |         await expect(page.locator('.navbar.navbar-expand-lg')).toBeVisible({ timeout: 15000 });
+         |                                                                ^
+      20 |         await expect(page.locator('footer.main-footer')).toBeVisible({ timeout: 15000 });
+      21 |
+      22 |         // Check for hero image or brand logo to ensure visual loading
+        at C:\Users\700612\revolt_scuba_tests\tests\scuba.spec.js:19:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\scuba-Revolt-Motors-Scuba-Testing-Homepage-Health-SEO-Check-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\scuba-Revolt-Motors-Scuba-Testing-Homepage-Health-SEO-Check-chromium\error-context.md
+
+  2) [chromium] › tests\scuba.spec.js:52:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) › Health Check: https://www.revoltmotors.com/ 
+
+    Error: Navbar visible on https://www.revoltmotors.com/
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.navbar.navbar-expand-lg').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Navbar visible on https://www.revoltmotors.com/ with timeout 5000ms[22m
+    [2m  - waiting for locator('.navbar.navbar-expand-lg').first()[22m
+
+
+      105 |                 // Check essential layout elements (Navbar & Footer) to ensure full render
+      106 |                 // validation that "content is rendering in that page"
+    > 107 |                 await expect(page.locator('.navbar.navbar-expand-lg').first(), `Navbar visible on ${url}`).toBeVisible();
+          |                                                                                                            ^
+      108 |                 await expect(page.locator('footer.main-footer').first(), `Footer visible on ${url}`).toBeVisible();
+      109 |
+      110 |                 // 3. Basic SEO Check
+        at C:\Users\700612\revolt_scuba_tests\tests\scuba.spec.js:107:108
+        at C:\Users\700612\revolt_scuba_tests\tests\scuba.spec.js:94:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\scuba-Revolt-Motors-Scuba--a804f-te-Scuba-All-Public-Routes--chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\scuba-Revolt-Motors-Scuba--a804f-te-Scuba-All-Public-Routes--chromium\error-context.md
+
+  2 failed
+    [chromium] › tests\scuba.spec.js:5:5 › Revolt Motors Scuba Testing › Homepage Health & SEO Check 
+    [chromium] › tests\scuba.spec.js:52:5 › Revolt Motors Scuba Testing › Navigation & Route Scuba (All Public Routes) 
